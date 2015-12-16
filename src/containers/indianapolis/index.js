@@ -136,7 +136,7 @@ class Indianapolis extends Component {
 
   render () {
     const Indianapolis = this
-    const {browsochrones, dispatch, map, mapMarkers} = this.props
+    const {browsochrones, dispatch, map, mapMarkers} = Indianapolis.props
     const {accessibility} = browsochrones
 
     function createMarkers () {

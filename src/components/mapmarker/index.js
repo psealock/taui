@@ -58,17 +58,18 @@ function onLeafletDragEnd (type, dispatch, e) {
 }
 
 /**
- * On Marker Move, execute a callback only if the Marker has ended its move
+ * On Marker Move, execute a callback only if the Marker has ended its move and the
+ * callback exists
  *
  * @private
  * @param  {String}   type
  * @param  {Object}   marker
- * @param  {Function} callback
+ * @param  {Function} onUpdate
  * @param  {Event}   e
  */
-function onLeafletMove (type, marker, callback, e) {
-  if (!marker.isDragging && callback) {
-    callback(e)
+function onLeafletMove (type, marker, onUpdate, e) {
+  if (!marker.isDragging && onUpdate) {
+    onUpdate(e)
   }
 }
 
