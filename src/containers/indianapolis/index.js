@@ -1,6 +1,5 @@
 import debounce from 'debounce'
 import React, {Component, PropTypes} from 'react'
-import {Marker, Popup} from 'react-leaflet'
 import {connect} from 'react-redux'
 import Transitive from 'transitive-js'
 import TransitiveLayer from 'leaflet-transitivelayer'
@@ -9,6 +8,7 @@ import {updateMapMarker, updateMap} from '../../actions'
 import {fetchGrid, fetchOrigin, fetchQuery, fetchStopTrees, fetchTransitiveNetwork, setAccessibility, setSurface} from '../../actions/browsochrones'
 import config from '../../config'
 import Fullscreen from '../../components/fullscreen'
+import MapMarker, {MapMarkerConstants} from '../../components/MapMarker'
 import Geocoder from '../../components/geocoder'
 import log from '../../log'
 import Log from '../../components/log'
@@ -135,8 +135,28 @@ class Indianapolis extends Component {
   }
 
   render () {
-    const {browsochrones, dispatch, map, mapMarker} = this.props
+    const Indianapolis = this
+    const {browsochrones, dispatch, map, mapMarkers} = this.props
     const {accessibility} = browsochrones
+
+    function createMarkers () {
+      return Object.keys(MapMarkerConstants).map(key => {
+        const type = MapMarkerConstants[key];
+        const marker = mapMarkers[type]
+        const onUpdate = type === MapMarkerConstants.ORIGIN ? Indianapolis.updateBrowsochrones : null
+
+        if (marker && marker.position) {
+          return (
+            <MapMarker
+            {...Indianapolis.props}
+            key={key}
+            onUpdate={onUpdate}
+            type={type}/>
+          )
+        }
+        return null;
+      })
+    }
 
     return (
       <Fullscreen>
@@ -157,43 +177,7 @@ class Indianapolis extends Component {
             onLeafletMouseMove={e => {
               this.updateTransitive(e)
             }}>
-            {(() => {
-              if (mapMarker && mapMarker.position) {
-                return (
-                  <Marker
-                    draggable={true}
-                    position={mapMarker.position}
-                    onLeafletDragStart={e => {
-                      const {lat, lng} = e.target._latlng
-                      const position = [lat, lng]
-
-                      dispatch(updateMapMarker({
-                        isDragging: true,
-                        position,
-                        text: ''
-                      }))
-                    }}
-                    onLeafletDragEnd={e => {
-                      const {lat, lng} = e.target._latlng
-                      const position = [lat, lng]
-                      log(`Dragged marker to ${printLL(position)}`)
-
-                      dispatch(updateMapMarker({
-                        isDragging: false,
-                        position,
-                        text: ''
-                      }))
-                    }}
-                    onMove={e => {
-                      if (!mapMarker.isDragging) {
-                        this.updateBrowsochrones(e)
-                      }
-                    }}>
-                    {mapMarker.text && <Popup><span>{mapMarker.text}</span></Popup>}
-                  </Marker>
-                )
-              }
-            })()}
+            {createMarkers()}
           </Map>
           <div className={styles.sideBar}>
             <div className={styles.scrollable}>
@@ -206,8 +190,11 @@ class Indianapolis extends Component {
                       const position = [lat, lng]
 
                       dispatch(updateMapMarker({
-                        position,
-                        text: place.place_name
+                        [MapMarkerConstants.ORIGIN]: {
+                          isDragging: false,
+                          position,
+                          text: place.place_name
+                        }
                       }))
 
                       log(`Selected: ${place.place_name}`)
