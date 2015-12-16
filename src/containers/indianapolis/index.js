@@ -4,13 +4,12 @@ import {connect} from 'react-redux'
 import Transitive from 'transitive-js'
 import TransitiveLayer from 'leaflet-transitivelayer'
 
-import {updateMapMarker, updateMap} from '../../actions'
+import {addActionLogItem, updateMapMarker, updateMap} from '../../actions'
 import {fetchGrid, fetchOrigin, fetchQuery, fetchStopTrees, fetchTransitiveNetwork, setAccessibility, setSurface} from '../../actions/browsochrones'
 import config from '../../config'
 import Fullscreen from '../../components/fullscreen'
 import renderMarkers from '../../components/marker-helper'
 import Geocoder from '../../components/geocoder'
-import log from '../../log'
 import Log from '../../components/log'
 import Map from '../../components/map'
 import styles from './style.css'
@@ -33,7 +32,11 @@ class Indianapolis extends Component {
     this.initializeBrowsochrones()
 
     this.updateBrowsochrones = this.updateBrowsochrones.bind(this)
-    this.updateTransitive = debounce(this.updateTransitive, 100, true)
+    this.updateTransitive = debounce(this.updateTransitive, 200, true)
+  }
+
+  log (l) {
+    this.props.dispatch(addActionLogItem(l))
   }
 
   initializeBrowsochrones () {
@@ -63,7 +66,7 @@ class Indianapolis extends Component {
   }
 
   updateBrowsochrones (event) {
-    log(`Retrieving isochrones for origin.`)
+    this.log(`Retrieving isochrones for origin.`)
 
     const {browsochrones, dispatch} = this.props
     const bc = browsochrones.instance
@@ -149,7 +152,7 @@ class Indianapolis extends Component {
             onChange={state => dispatch(updateMap(state))}
             onClick={e => {
               const {lat, lng} = e.latlng
-              log(`Clicked map at ${printLL([lat, lng])}`)
+              this.log(`Clicked map at ${printLL([lat, lng])}`)
 
               dispatch(updateMapMarker({
                 position: [lat, lng],
@@ -167,6 +170,7 @@ class Indianapolis extends Component {
                 <fieldset className='form-group' style={{position: 'relative'}}>
                   <Geocoder
                     accessToken={config.map.mapbox.accessToken}
+                    inputPlaceholder='Search for a start address'
                     onSelect={place => {
                       const [lng, lat] = place.center
                       const position = [lat, lng]
@@ -179,12 +183,13 @@ class Indianapolis extends Component {
                         }
                       }))
 
-                      log(`Selected: ${place.place_name}`)
+                      this.log(`Selected: ${place.place_name}`)
                     }}
                     />
                 </fieldset>
               </form>
-              <p>Access to {accessibility} jobs within 60 minutes.</p>
+              <h5>Access</h5>
+              <p>{accessibility.toLocaleString()} jobs within 60 minutes.</p>
             </div>
 
             <div className={styles.navbar}>Indianapolis</div>

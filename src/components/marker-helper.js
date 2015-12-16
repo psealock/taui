@@ -1,7 +1,6 @@
-import log from '../log'
 import React, {Component, PropTypes} from 'react'
 import {Marker, Popup} from 'react-leaflet'
-import {updateMapMarker} from '../actions'
+import {addActionLogItem, updateMapMarker} from '../actions'
 
 /**
  * A set of string constants for Marker types.
@@ -13,6 +12,10 @@ import {updateMapMarker} from '../actions'
 const TYPES = {
   ORIGIN: 'originMarker',
   DESTINATION: 'destinationMarker'
+}
+
+function log (l, dispatch) {
+  dispatch(addActionLogItem(l))
 }
 
 /**
@@ -47,7 +50,7 @@ function onLeafletDragStart (type, dispatch, e) {
 function onLeafletDragEnd (type, dispatch, e) {
   const {lat, lng} = e.target._latlng
   const position = [lat, lng]
-  log(`Dragged marker to ${printLL(position)}`)
+  log(`Dragged marker to ${printLL(position)}`, dispatch)
 
   dispatch(updateMapMarker({
     [type]: {
