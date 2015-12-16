@@ -8,7 +8,7 @@ import {updateMapMarker, updateMap} from '../../actions'
 import {fetchGrid, fetchOrigin, fetchQuery, fetchStopTrees, fetchTransitiveNetwork, setAccessibility, setSurface} from '../../actions/browsochrones'
 import config from '../../config'
 import Fullscreen from '../../components/fullscreen'
-import MapMarker, {MapMarkerConstants} from '../../components/MapMarker'
+import renderMarkers from '../../components/marker-helper'
 import Geocoder from '../../components/geocoder'
 import log from '../../log'
 import Log from '../../components/log'
@@ -32,6 +32,7 @@ class Indianapolis extends Component {
     super(props)
     this.initializeBrowsochrones()
 
+    this.updateBrowsochrones = this.updateBrowsochrones.bind(this)
     this.updateTransitive = debounce(this.updateTransitive, 100, true)
   }
 
@@ -135,28 +136,9 @@ class Indianapolis extends Component {
   }
 
   render () {
-    const Indianapolis = this
-    const {browsochrones, dispatch, map, mapMarkers} = Indianapolis.props
+    const {browsochrones, dispatch, map, mapMarkers} = this.props
     const {accessibility} = browsochrones
-
-    function createMarkers () {
-      return Object.keys(MapMarkerConstants).map(key => {
-        const type = MapMarkerConstants[key];
-        const marker = mapMarkers[type]
-        const onUpdate = type === MapMarkerConstants.ORIGIN ? Indianapolis.updateBrowsochrones : null
-
-        if (marker && marker.position) {
-          return (
-            <MapMarker
-            {...Indianapolis.props}
-            key={key}
-            onUpdate={onUpdate}
-            type={type}/>
-          )
-        }
-        return null;
-      })
-    }
+    const markers = renderMarkers(mapMarkers, this.updateBrowsochrones, dispatch)
 
     return (
       <Fullscreen>
@@ -177,7 +159,7 @@ class Indianapolis extends Component {
             onLeafletMouseMove={e => {
               this.updateTransitive(e)
             }}>
-            {createMarkers()}
+            {markers}
           </Map>
           <div className={styles.sideBar}>
             <div className={styles.scrollable}>

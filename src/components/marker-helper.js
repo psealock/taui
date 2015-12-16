@@ -1,6 +1,7 @@
-import log from '../../log'
+import log from '../log'
 import React, {Component, PropTypes} from 'react'
 import {Marker, Popup} from 'react-leaflet'
+import {updateMapMarker} from '../actions'
 
 /**
  * A set of string constants for Marker types.
@@ -73,30 +74,44 @@ function onLeafletMove (type, marker, onUpdate, e) {
   }
 }
 
-class MapMarker extends Component {
-  static propTypes = {
-    dispatch: PropTypes.any.isRequired,
-    mapMarkers: PropTypes.object.isRequired,
-    onUpdate: PropTypes.func.isRequired,
-    type: PropTypes.oneOf([TYPES.ORIGIN, TYPES.DESTINATION])
-  }
-
-  render () {
-    const {dispatch, mapMarkers, onUpdate, type} = this.props
-    const marker = mapMarkers[type]
-
-    return (
-      <Marker
-        draggable={true}
-        position={marker.position}
-        onLeafletDragStart={onLeafletDragStart.bind(undefined, type, dispatch)}
-        onLeafletDragEnd={onLeafletDragEnd.bind(undefined, type, dispatch)}
-        onMove={onLeafletMove.bind(undefined, type, marker, onUpdate)}>
-        {marker.text && <Popup><span>{marker.text}</span></Popup>}
-      </Marker>
-    )
-  }
+/**
+ * Helper function for displaying coordinates
+ *
+ * @priva
+ * @param  {Array} ll
+ * @return {String}
+ */
+function printLL (ll) {
+  return `[ ${ll[0].toFixed(4)}, ${ll[1].toFixed(4)} ]`
 }
 
-const MapMarkerConstants = TYPES
-export { MapMarker as default, MapMarkerConstants }
+/**
+ * Create array of markers to be rendered
+ *
+ * @param  {Object} mapMarkers
+ * @param  {Function} onUpdate
+ * @param  {Function} dispatch
+ * @return {Array}
+ */
+export default function renderMarkers (mapMarkers, onUpdate, dispatch) {
+  return Object.keys(TYPES).map(key => {
+    const type = TYPES[key];
+    const marker = mapMarkers[type]
+    const callback = type === TYPES.ORIGIN ? onUpdate : null
+
+    if (marker && marker.position) {
+      return (
+        <Marker
+          draggable={true}
+          key={key}
+          position={marker.position}
+          onLeafletDragStart={onLeafletDragStart.bind(undefined, type, dispatch)}
+          onLeafletDragEnd={onLeafletDragEnd.bind(undefined, type, dispatch)}
+          onMove={onLeafletMove.bind(undefined, type, marker, callback)}>
+          {marker.text && <Popup><span>{marker.text}</span></Popup>}
+        </Marker>
+      )
+    }
+    return null;
+  })
+}
