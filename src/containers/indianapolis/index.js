@@ -1,12 +1,12 @@
 import debounce from 'debounce'
 import React, {Component, PropTypes} from 'react'
+import Dock from 'react-dock'
 import {connect} from 'react-redux'
 import Transitive from 'transitive-js'
 import TransitiveLayer from 'leaflet-transitivelayer'
 
 import {addActionLogItem, updateMapMarker, updateMap} from '../../actions'
 import {fetchGrid, fetchOrigin, fetchQuery, fetchStopTrees, fetchTransitiveNetwork, setAccessibility, setSurface} from '../../actions/browsochrones'
-import config from '../../config'
 import Fullscreen from '../../components/fullscreen'
 import renderMarkers, {mapMarkerConstants} from '../../components/marker-helper'
 import Geocoder from '../../components/geocoder'
@@ -105,35 +105,35 @@ class Indianapolis extends Component {
     const grid = 'Jobs_total'
 
     if (!bc.grid) {
-      fetchGrid(`${config.browsochrones.gridsUrl}/${grid}.grid`)(dispatch)
+      fetchGrid(`${browsochrones.gridsUrl}/${grid}.grid`)(dispatch)
     }
 
     if (!bc.query) {
-      fetchQuery(config.browsochrones.queryUrl)(dispatch)
+      fetchQuery(browsochrones.queryUrl)(dispatch)
     }
 
     if (!bc.stopTrees) {
-      fetchStopTrees(config.browsochrones.stopTreesUrl)(dispatch)
+      fetchStopTrees(browsochrones.stopTreesUrl)(dispatch)
     }
 
     if (!bc.originData && bc.originCoordinates) {
-      fetchOrigin(config.browsochrones.originsUrl, bc.originCoordinates)(dispatch)
+      fetchOrigin(browsochrones.originsUrl, bc.originCoordinates)(dispatch)
     }
 
     if (!bc.transitiveNetwork) {
-      fetchTransitiveNetwork(config.browsochrones.transitiveNetworkUrl)(dispatch)
+      fetchTransitiveNetwork(browsochrones.transitiveNetworkUrl)(dispatch)
     }
   }
 
   updateBrowsochrones (event) {
-    this.log(`Retrieving isochrones for origin.`)
-
     const {browsochrones, dispatch} = this.props
     const bc = browsochrones.instance
     const map = getMapFromEvent(event)
 
     // get the pixel coordinates
     const origin = bc.pixelToOriginCoordinates(map.project(event.latlng || event.target._latlng), map.getZoom())
+
+    this.log(`Retrieving isochrones for origin [${origin.x},  ${origin.y}]`)
 
     if (!bc.coordinatesInQueryBounds(origin)) {
       if (this.isoLayer) {
@@ -143,7 +143,7 @@ class Indianapolis extends Component {
       return
     }
 
-    return fetchOrigin(config.browsochrones.originsUrl, origin)(dispatch)
+    return fetchOrigin(browsochrones.originsUrl, origin)(dispatch)
       .then(r => {
         dispatch(setSurface(bc.generateSurface()))
         dispatch(setAccessibility(bc.getAccessibilityForCutoff()))
@@ -194,7 +194,7 @@ class Indianapolis extends Component {
         }
       }
 
-      console.log(`Transitive found ${data.journeys.length} unique paths`)
+      this.log(`Transitive found ${data.journeys.length} unique paths`)
     }
   }
 
@@ -206,28 +206,36 @@ class Indianapolis extends Component {
 
     return (
       <Fullscreen>
-        <div className={styles.main}>
-          <Map
-            className={styles.map}
-            map={map}
-            onChange={state => dispatch(updateMap(state))}
-            onClick={e => {
-              const {lat, lng} = e.latlng
-              this.log(`Clicked map at ${printLL([lat, lng])}`)
+        <Map
+          className={styles.map}
+          map={map}
+          onChange={state => dispatch(updateMap(state))}
+          onClick={e => {
+            const {lat, lng} = e.latlng
+            this.log(`Clicked map at ${printLL([lat, lng])}`)
 
-              dispatch(updateMapMarker({
+            dispatch(updateMapMarker({
+              [mapMarkerConstants.ORIGIN]: {
+                isDragging: false,
                 position: [lat, lng],
                 text: ''
-              }))
-            }}>
-            {[originMarker, destinationMarker]}
-          </Map>
-          <div className={styles.sideBar}>
-            <div className={styles.scrollable}>
-              <form>
-                <fieldset className='form-group' style={{position: 'relative'}}>
+              }
+            }))
+          }}>
+          {[originMarker, destinationMarker]}
+        </Map>
+        <Dock
+          dimMode='none'
+          fluid={true}
+          isVisible={true}
+          position='right'
+          >
+          <div className={styles.navbar}>Champagne</div>
+          <div className={styles.dockContent}>
+            <form>
+              <fieldset className='form-group' style={{position: 'relative'}}>
                   <Geocoder
-                    accessToken={config.map.mapbox.accessToken}
+                    accessToken={map.mapbox.accessToken}
                     inputPlaceholder='Search for a start address'
                     onSelect={place => {
                       const [lng, lat] = place.center
@@ -247,7 +255,7 @@ class Indianapolis extends Component {
                 </fieldset>
                 <fieldset className='form-group' style={{position: 'relative'}}>
                   <Geocoder
-                    accessToken={config.map.mapbox.accessToken}
+                    accessToken={map.mapbox.accessToken}
                     inputPlaceholder='Search for an end address'
                     onSelect={place => {
                       const [lng, lat] = place.center
@@ -265,15 +273,12 @@ class Indianapolis extends Component {
                     }}
                     />
                 </fieldset>
-              </form>
-              <h5>Access</h5>
-              <p>{accessibility.toLocaleString()} jobs within 60 minutes.</p>
-            </div>
-
-            <div className={styles.navbar}>Indianapolis</div>
-            <div className={styles.dockedActionLog}><Log /></div>
+            </form>
+            <h5>Access</h5>
+            <p>{accessibility.toLocaleString()} indicators within 60 minutes.</p>
           </div>
-        </div>
+          <div className={styles.dockedActionLog}><Log /></div>
+        </Dock>
       </Fullscreen>
     )
   }
