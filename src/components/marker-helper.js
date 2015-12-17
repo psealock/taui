@@ -62,25 +62,9 @@ function onLeafletDragEnd (type, dispatch, e) {
 }
 
 /**
- * On Marker Move, execute a callback only if the Marker has ended its move and the
- * callback exists
- *
- * @private
- * @param  {String}   type
- * @param  {Object}   marker
- * @param  {Function} onUpdate
- * @param  {Event}   e
- */
-function onLeafletMove (type, marker, onUpdate, e) {
-  if (!marker.isDragging && onUpdate) {
-    onUpdate(e)
-  }
-}
-
-/**
  * Helper function for displaying coordinates
  *
- * @priva
+ * @private
  * @param  {Array} ll
  * @return {String}
  */
@@ -91,30 +75,29 @@ function printLL (ll) {
 /**
  * Create array of markers to be rendered
  *
+ * @public
  * @param  {Object} mapMarkers
- * @param  {Function} onUpdate
+ * @param  {String} type
  * @param  {Function} dispatch
+ * @param  {Function} onMove
  * @return {Array}
  */
-export default function renderMarkers (mapMarkers, onUpdate, dispatch) {
-  return Object.keys(TYPES).map(key => {
-    const type = TYPES[key];
-    const marker = mapMarkers[type]
-    const callback = type === TYPES.ORIGIN ? onUpdate : null
-
-    if (marker && marker.position) {
-      return (
-        <Marker
-          draggable={true}
-          key={key}
-          position={marker.position}
-          onLeafletDragStart={onLeafletDragStart.bind(undefined, type, dispatch)}
-          onLeafletDragEnd={onLeafletDragEnd.bind(undefined, type, dispatch)}
-          onMove={onLeafletMove.bind(undefined, type, marker, callback)}>
-          {marker.text && <Popup><span>{marker.text}</span></Popup>}
-        </Marker>
-      )
-    }
-    return null;
-  })
+function renderMarker (mapMarkers, type, dispatch, onMove) {
+  const marker = mapMarkers[type]
+  if (marker && marker.position) {
+    return (
+      <Marker
+        draggable={true}
+        key={type}
+        position={marker.position}
+        onLeafletDragStart={onLeafletDragStart.bind(undefined, type, dispatch)}
+        onLeafletDragEnd={onLeafletDragEnd.bind(undefined, type, dispatch)}
+        onMove={onMove}>
+        {marker.text && <Popup><span>{marker.text}</span></Popup>}
+      </Marker>
+    )
+  }
+  return null;
 }
+const mapMarkerConstants = TYPES
+export {renderMarker as default, mapMarkerConstants}

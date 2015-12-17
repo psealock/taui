@@ -8,7 +8,7 @@ import {addActionLogItem, updateMapMarker, updateMap} from '../../actions'
 import {fetchGrid, fetchOrigin, fetchQuery, fetchStopTrees, fetchTransitiveNetwork, setAccessibility, setSurface} from '../../actions/browsochrones'
 import config from '../../config'
 import Fullscreen from '../../components/fullscreen'
-import renderMarkers from '../../components/marker-helper'
+import renderMarkers, {mapMarkerConstants} from '../../components/marker-helper'
 import Geocoder from '../../components/geocoder'
 import Log from '../../components/log'
 import Map from '../../components/map'
@@ -17,6 +17,33 @@ import transitiveStyle from './transitive-style'
 
 function printLL (ll) {
   return `[ ${ll[0].toFixed(4)}, ${ll[1].toFixed(4)} ]`
+}
+
+/**
+ * Callback to be executed on Origin Marker move. Update Browsochones when
+ * Marker is dropped
+ *
+ * @private
+ * @param  {Event} e
+ */
+function onMoveOrigin (e) {
+  const marker = this.props.mapMarkers[mapMarkerConstants.ORIGIN]
+  if (!marker.isDragging) {
+    this.updateBrowsochrones(e)
+  }
+}
+
+/**
+ * Callback to be executed on Destination Marker move.
+ *
+ * @private
+ * @param  {Event} e
+ */
+function onMoveDestination (e) {
+  const marker = this.props.mapMarkers[mapMarkerConstants.DESTINATION]
+  if (!marker.isDragging) {
+    console.log('drop destination')
+  }
 }
 
 class Indianapolis extends Component {
@@ -141,7 +168,8 @@ class Indianapolis extends Component {
   render () {
     const {browsochrones, dispatch, map, mapMarkers} = this.props
     const {accessibility} = browsochrones
-    const markers = renderMarkers(mapMarkers, this.updateBrowsochrones, dispatch)
+    const originMarker = renderMarkers(mapMarkers, mapMarkerConstants.ORIGIN, dispatch, onMoveOrigin.bind(this))
+    const destinationMarker = renderMarkers(mapMarkers, mapMarkerConstants.DESTINATION, dispatch, onMoveDestination.bind(this))
 
     return (
       <Fullscreen>
@@ -162,7 +190,7 @@ class Indianapolis extends Component {
             onLeafletMouseMove={e => {
               this.updateTransitive(e)
             }}>
-            {markers}
+            {[originMarker, destinationMarker]}
           </Map>
           <div className={styles.sideBar}>
             <div className={styles.scrollable}>
