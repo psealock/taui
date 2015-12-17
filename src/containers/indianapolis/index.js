@@ -196,6 +196,7 @@ class Indianapolis extends Component {
             <div className={styles.scrollable}>
               <form>
                 <fieldset className='form-group' style={{position: 'relative'}}>
+                  <legend>Choose an origin</legend>
                   <Geocoder
                     accessToken={config.map.mapbox.accessToken}
                     inputPlaceholder='Search for a start address'
@@ -204,7 +205,28 @@ class Indianapolis extends Component {
                       const position = [lat, lng]
 
                       dispatch(updateMapMarker({
-                        [MapMarkerConstants.ORIGIN]: {
+                        [mapMarkerConstants.ORIGIN]: {
+                          isDragging: false,
+                          position,
+                          text: place.place_name
+                        }
+                      }))
+
+                      this.log(`Selected: ${place.place_name}`)
+                    }}
+                    />
+                </fieldset>
+                <fieldset className='form-group' style={{position: 'relative'}}>
+                  <legend>Choose a destination</legend>
+                  <Geocoder
+                    accessToken={config.map.mapbox.accessToken}
+                    inputPlaceholder='Search for an end address'
+                    onSelect={place => {
+                      const [lng, lat] = place.center
+                      const position = [lat, lng]
+
+                      dispatch(updateMapMarker({
+                        [mapMarkerConstants.DESTINATION]: {
                           isDragging: false,
                           position,
                           text: place.place_name
