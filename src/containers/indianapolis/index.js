@@ -19,6 +19,20 @@ function printLL (ll) {
   return `[ ${ll[0].toFixed(4)}, ${ll[1].toFixed(4)} ]`
 }
 
+function onAfterOriginBrowsochroneUpdate (e) {
+  const site = this
+  const destinationMarker = site.props.mapMarkers[mapMarkerConstants.DESTINATION]
+  if (destinationMarker && destinationMarker.position) {
+    const destinationEvent = Object.assign(e, {
+      latlng: {
+        lat: destinationMarker.position[0],
+        lng: destinationMarker.position[1]
+      }
+    })
+    site.updateTransitive(destinationEvent);
+  }
+}
+
 /**
  * Callback to be executed on Origin Marker move. Update Browsochones when
  * Marker is dropped
@@ -31,18 +45,7 @@ function onMoveOrigin (e) {
   const originMarker = site.props.mapMarkers[mapMarkerConstants.ORIGIN]
   if (!originMarker.isDragging) {
     site.updateBrowsochrones(e)
-      .then(() => {
-        const destinationMarker = site.props.mapMarkers[mapMarkerConstants.DESTINATION]
-        if (destinationMarker && destinationMarker.position) {
-          const destinationEvent = Object.assign(e, {
-            latlng: {
-              lat: destinationMarker.position[0],
-              lng: destinationMarker.position[1]
-            }
-          })
-          site.updateTransitive(destinationEvent);
-        }
-      })
+      .then(onAfterOriginBrowsochroneUpdate.bind(this, e))
   }
 }
 
@@ -223,7 +226,6 @@ class Indianapolis extends Component {
             <div className={styles.scrollable}>
               <form>
                 <fieldset className='form-group' style={{position: 'relative'}}>
-                  <legend>Choose an origin</legend>
                   <Geocoder
                     accessToken={config.map.mapbox.accessToken}
                     inputPlaceholder='Search for a start address'
@@ -244,7 +246,6 @@ class Indianapolis extends Component {
                     />
                 </fieldset>
                 <fieldset className='form-group' style={{position: 'relative'}}>
-                  <legend>130 dickson street Indianapolis</legend>
                   <Geocoder
                     accessToken={config.map.mapbox.accessToken}
                     inputPlaceholder='Search for an end address'
