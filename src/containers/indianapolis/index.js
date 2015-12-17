@@ -19,6 +19,13 @@ function printLL (ll) {
   return `[ ${ll[0].toFixed(4)}, ${ll[1].toFixed(4)} ]`
 }
 
+/**
+ * When the origin is moved, Browsochrones are updated. Update Transitive after
+ * that event only if a destination marker is present.
+ *
+ * @private
+ * @param  {Event} e [description]
+ */
 function onAfterOriginBrowsochroneUpdate (e) {
   const site = this
   const destinationMarker = site.props.mapMarkers[mapMarkerConstants.DESTINATION]
@@ -43,7 +50,13 @@ function onAfterOriginBrowsochroneUpdate (e) {
 function onMoveOrigin (e) {
   const site = this
   const originMarker = site.props.mapMarkers[mapMarkerConstants.ORIGIN]
+
   if (!originMarker.isDragging) {
+    const {lat, lng} = e.target._latlng
+    const position = [lat, lng]
+
+    site.log(`Origin marker dragged to ${printLL(position)}`)
+
     site.updateBrowsochrones(e)
       .then(onAfterOriginBrowsochroneUpdate.bind(this, e))
   }
