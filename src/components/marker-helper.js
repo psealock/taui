@@ -80,9 +80,10 @@ function printLL (ll) {
  * @param  {String} type
  * @param  {Function} dispatch
  * @param  {Function} onMove
- * @return {Array}
+ * @param  {Function} onAdd
+ * @return {ReactComponent}
  */
-function renderMarker (mapMarkers, type, dispatch, onMove) {
+function renderMarker (mapMarkers, type, dispatch, onMove, onAdd) {
   const marker = mapMarkers[type]
   if (marker && marker.position) {
     return (
@@ -92,6 +93,7 @@ function renderMarker (mapMarkers, type, dispatch, onMove) {
         position={marker.position}
         onLeafletDragStart={onLeafletDragStart.bind(undefined, type, dispatch)}
         onLeafletDragEnd={onLeafletDragEnd.bind(undefined, type, dispatch)}
+        onAdd={onAdd}
         onMove={onMove}>
         {marker.text && <Popup><span>{marker.text}</span></Popup>}
       </Marker>

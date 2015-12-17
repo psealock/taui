@@ -27,9 +27,22 @@ function printLL (ll) {
  * @param  {Event} e
  */
 function onMoveOrigin (e) {
-  const marker = this.props.mapMarkers[mapMarkerConstants.ORIGIN]
-  if (!marker.isDragging) {
-    this.updateBrowsochrones(e)
+  const site = this
+  const originMarker = site.props.mapMarkers[mapMarkerConstants.ORIGIN]
+  if (!originMarker.isDragging) {
+    site.updateBrowsochrones(e)
+      .then(() => {
+        const destinationMarker = site.props.mapMarkers[mapMarkerConstants.DESTINATION]
+        if (destinationMarker && destinationMarker.position) {
+          const destinationEvent = Object.assign(e, {
+            latlng: {
+              lat: destinationMarker.position[0],
+              lng: destinationMarker.position[1]
+            }
+          })
+          site.updateTransitive(destinationEvent);
+        }
+      })
   }
 }
 
@@ -41,9 +54,26 @@ function onMoveOrigin (e) {
  */
 function onMoveDestination (e) {
   const marker = this.props.mapMarkers[mapMarkerConstants.DESTINATION]
-  if (!marker.isDragging) {
-    console.log('drop destination')
-  }
+  this.updateTransitive(e);
+}
+
+/**
+ * When a destination marker is added, use its position to update Transitive
+ *
+ * @private
+ * @param  {Event} e
+ */
+function onAddDestination (e) {
+  const site = this
+  const posOrigin = site.props.mapMarkers[mapMarkerConstants.ORIGIN].position
+  const posDestination = site.props.mapMarkers[mapMarkerConstants.DESTINATION].position
+  const destinationEvent = Object.assign(e, {
+    latlng: {
+      lat: posDestination[0],
+      lng: posDestination[1]
+    }
+  })
+  site.updateTransitive(destinationEvent);
 }
 
 class Indianapolis extends Component {
@@ -110,7 +140,7 @@ class Indianapolis extends Component {
       return
     }
 
-    fetchOrigin(config.browsochrones.originsUrl, origin)(dispatch)
+    return fetchOrigin(config.browsochrones.originsUrl, origin)(dispatch)
       .then(r => {
         dispatch(setSurface(bc.generateSurface()))
         dispatch(setAccessibility(bc.getAccessibilityForCutoff()))
@@ -168,8 +198,8 @@ class Indianapolis extends Component {
   render () {
     const {browsochrones, dispatch, map, mapMarkers} = this.props
     const {accessibility} = browsochrones
-    const originMarker = renderMarkers(mapMarkers, mapMarkerConstants.ORIGIN, dispatch, onMoveOrigin.bind(this))
-    const destinationMarker = renderMarkers(mapMarkers, mapMarkerConstants.DESTINATION, dispatch, onMoveDestination.bind(this))
+    const originMarker = renderMarkers(mapMarkers, mapMarkerConstants.ORIGIN, dispatch, onMoveOrigin.bind(this), () => {})
+    const destinationMarker = renderMarkers(mapMarkers, mapMarkerConstants.DESTINATION, dispatch, onMoveDestination.bind(this), onAddDestination.bind(this))
 
     return (
       <Fullscreen>
@@ -186,9 +216,6 @@ class Indianapolis extends Component {
                 position: [lat, lng],
                 text: ''
               }))
-            }}
-            onLeafletMouseMove={e => {
-              this.updateTransitive(e)
             }}>
             {[originMarker, destinationMarker]}
           </Map>
@@ -217,7 +244,7 @@ class Indianapolis extends Component {
                     />
                 </fieldset>
                 <fieldset className='form-group' style={{position: 'relative'}}>
-                  <legend>Choose a destination</legend>
+                  <legend>130 dickson street Indianapolis</legend>
                   <Geocoder
                     accessToken={config.map.mapbox.accessToken}
                     inputPlaceholder='Search for an end address'
